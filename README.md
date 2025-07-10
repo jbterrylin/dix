@@ -272,7 +272,7 @@ If a get function does not include `ByKey`, it retrieves the value added with th
 ```go
 	func DeductRefCountByKey[T any](key ValueKey) error
 ```
-### Value
+### Provider
 #### Add
 <a id="func-addprovider"></a>
 
