@@ -61,7 +61,7 @@ func NewAfterAddCtx(
 }
 
 func AfterAdd(f AfterAddFunc) {
-	Container.afterAdd = f
+	globalContainer.afterAdd = f
 }
 
 func NewAfterProviderRunCtx(
@@ -78,7 +78,7 @@ func NewAfterProviderRunCtx(
 }
 
 func AfterProviderRun(f AfterProviderRunFunc) {
-	Container.afterProviderRun = f
+	globalContainer.afterProviderRun = f
 }
 
 func NewAfterFirstAccessCtx(
@@ -96,7 +96,7 @@ func NewAfterFirstAccessCtx(
 }
 
 func AfterFirstAccess(f AfterFirstAccessFunc) {
-	Container.afterFirstAccess = f
+	globalContainer.afterFirstAccess = f
 }
 
 func NewBeforeDuplicateRegisterCtx(
@@ -118,5 +118,5 @@ func NewBeforeDuplicateRegisterCtx(
 }
 
 func BeforeDuplicateRegister(f BeforeDuplicateRegisterFunc) {
-	Container.beforeDuplicateRegister = f
+	globalContainer.beforeDuplicateRegister = f
 }

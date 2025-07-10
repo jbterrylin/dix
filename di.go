@@ -17,18 +17,18 @@ func SetDefaultProviderKey(defaultProviderKey string) {
 }
 
 func SetSafeDelete(safeDelete bool) {
-	Container.safeDelete = safeDelete
+	globalContainer.safeDelete = safeDelete
 }
 
 func SetResetMaxConcurrent(resetMaxConcurrent int) {
 	if resetMaxConcurrent == 0 {
-		Container.resetMaxConcurrent = 100
+		globalContainer.resetMaxConcurrent = 100
 		return
 	}
-	Container.resetMaxConcurrent = resetMaxConcurrent
+	globalContainer.resetMaxConcurrent = resetMaxConcurrent
 }
 
-var Container = newContainer()
+var globalContainer = newContainer()
 
 type (
 	container struct {
@@ -62,8 +62,8 @@ func Reset(opts ...ResetOption) []error {
 		o(&opt)
 	}
 
-	errs := reset(opt.skipOnClose, Container.typeKeyValueMap, DefaultValueKey)
-	errs = append(errs, reset(opt.skipOnClose, Container.typeKeyProviderMap, DefaultProviderKey)...)
+	errs := reset(opt.skipOnClose, globalContainer.typeKeyValueMap, DefaultValueKey)
+	errs = append(errs, reset(opt.skipOnClose, globalContainer.typeKeyProviderMap, DefaultProviderKey)...)
 
 	return errs
 }
@@ -81,7 +81,7 @@ func reset[Key ~string, Value iContainerData](
 		wg       sync.WaitGroup
 	)
 
-	sem := make(chan struct{}, Container.resetMaxConcurrent)
+	sem := make(chan struct{}, globalContainer.resetMaxConcurrent)
 
 	for typ, keys := range typeKeysMap {
 		for _, key := range keys {

@@ -52,10 +52,10 @@ func addProvider[T any](key ProviderKey, value func() (T, error), valueWithCtx f
 		)
 	}
 
-	oldValue, _ := getContainerNestedMapValue(Container.typeKeyProviderMap, t, key)
-	if oldValue != nil && Container.beforeDuplicateRegister != nil {
+	oldValue, _ := getContainerNestedMapValue(globalContainer.typeKeyProviderMap, t, key)
+	if oldValue != nil && globalContainer.beforeDuplicateRegister != nil {
 		oldValue.mu.RLock()
-		err := Container.beforeDuplicateRegister(NewBeforeDuplicateRegisterCtx(t, nil, nil, nil, &key, oldValue, tmp, false))
+		err := globalContainer.beforeDuplicateRegister(NewBeforeDuplicateRegisterCtx(t, nil, nil, nil, &key, oldValue, tmp, false))
 		oldValue.mu.RUnlock()
 		if err != nil {
 			return err
@@ -63,24 +63,24 @@ func addProvider[T any](key ProviderKey, value func() (T, error), valueWithCtx f
 	}
 
 	if opt.setDefault {
-		oldValue, _ := getContainerNestedMapValue(Container.typeKeyProviderMap, t, DefaultProviderKey)
-		if oldValue != nil && Container.beforeDuplicateRegister != nil {
+		oldValue, _ := getContainerNestedMapValue(globalContainer.typeKeyProviderMap, t, DefaultProviderKey)
+		if oldValue != nil && globalContainer.beforeDuplicateRegister != nil {
 			oldValue.mu.RLock()
-			err := Container.beforeDuplicateRegister(NewBeforeDuplicateRegisterCtx(t, nil, nil, nil, &key, oldValue, tmp, true))
+			err := globalContainer.beforeDuplicateRegister(NewBeforeDuplicateRegisterCtx(t, nil, nil, nil, &key, oldValue, tmp, true))
 			oldValue.mu.RUnlock()
 			if err != nil {
 				return err
 			}
 		}
 
-		setValueToContainerNestedMap(Container.typeKeyProviderMap, t, DefaultProviderKey, tmp)
+		setValueToContainerNestedMap(globalContainer.typeKeyProviderMap, t, DefaultProviderKey, tmp)
 	}
 
 	// to avoid replace DefaultProviderKey value fail but key value get set
-	setValueToContainerNestedMap(Container.typeKeyProviderMap, t, key, tmp)
+	setValueToContainerNestedMap(globalContainer.typeKeyProviderMap, t, key, tmp)
 
-	if Container.afterAdd != nil {
-		Container.afterAdd(NewAfterAddCtx(t, nil, nil, &key, tmp))
+	if globalContainer.afterAdd != nil {
+		globalContainer.afterAdd(NewAfterAddCtx(t, nil, nil, &key, tmp))
 	}
 
 	return nil
@@ -123,7 +123,7 @@ func getProviderByTypeKey(ctx context.Context, t reflect.Type, key ProviderKey, 
 		o(&opt)
 	}
 
-	provider, err := getContainerNestedMapValue(Container.typeKeyProviderMap, t, key)
+	provider, err := getContainerNestedMapValue(globalContainer.typeKeyProviderMap, t, key)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -167,11 +167,11 @@ func getProviderByTypeKey(ctx context.Context, t reflect.Type, key ProviderKey, 
 		provider.setAccessed()
 	}
 
-	if Container.afterProviderRun != nil {
-		Container.afterProviderRun(NewAfterProviderRunCtx(t, key, provider, tmp))
+	if globalContainer.afterProviderRun != nil {
+		globalContainer.afterProviderRun(NewAfterProviderRunCtx(t, key, provider, tmp))
 	}
-	if isFirstAccess && Container.afterFirstAccess != nil {
-		Container.afterFirstAccess(NewAfterFirstAccessCtx(t, nil, nil, &key, provider))
+	if isFirstAccess && globalContainer.afterFirstAccess != nil {
+		globalContainer.afterFirstAccess(NewAfterFirstAccessCtx(t, nil, nil, &key, provider))
 	}
 
 	return provider, tmp, nil
@@ -216,7 +216,7 @@ func DeleteProvider[T any]() {
 
 func DeleteProviderByKey[T any](key ProviderKey) error {
 	t := reflect.TypeOf((*T)(nil)).Elem()
-	_, err := deleteContainerNestedMapValue(Container.typeKeyProviderMap, t, key)
+	_, err := deleteContainerNestedMapValue(globalContainer.typeKeyProviderMap, t, key)
 	if err != nil {
 		return err
 	}
@@ -225,7 +225,7 @@ func DeleteProviderByKey[T any](key ProviderKey) error {
 
 func ListProviderKeys[T any]() []ProviderKey {
 	t := reflect.TypeOf((*T)(nil)).Elem()
-	keyProviderMap, exist := Container.typeKeyProviderMap.Get(t)
+	keyProviderMap, exist := globalContainer.typeKeyProviderMap.Get(t)
 	if !exist {
 		return []ProviderKey{}
 	}
@@ -243,7 +243,7 @@ func ListProviderKeys[T any]() []ProviderKey {
 
 func GetAllProvider[T any](opts ...ProviderGetOption) ([]T, error) {
 	t := reflect.TypeOf((*T)(nil)).Elem()
-	keyProviderMap, exist := Container.typeKeyProviderMap.Get(t)
+	keyProviderMap, exist := globalContainer.typeKeyProviderMap.Get(t)
 	if !exist {
 		return []T{}, nil
 	}

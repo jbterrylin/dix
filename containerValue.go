@@ -59,14 +59,14 @@ func (c *containerValue) triggerOnCloseHook() {
 }
 
 func (c *containerValue) refCounterIncr() {
-	if !Container.safeDelete {
+	if !globalContainer.safeDelete {
 		return
 	}
 	atomic.AddInt64(&c.refCounter, 1)
 }
 
 func (c *containerValue) refCounterDecr() {
-	if !Container.safeDelete {
+	if !globalContainer.safeDelete {
 		return
 	}
 	newRefCounter := atomic.AddInt64(&c.refCounter, -1)
@@ -81,7 +81,7 @@ func (c *containerValue) refCounterDecr() {
 }
 
 func (c *containerValue) waitUntilRefZero() {
-	if !Container.safeDelete {
+	if !globalContainer.safeDelete {
 		return
 	}
 	c.refCounterCond.L.Lock()

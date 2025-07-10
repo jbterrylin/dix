@@ -19,10 +19,10 @@ func Add[T any](key ValueKey, val T, opts ...ValueAddOption) error {
 
 	tmp := newContainerValue(val, opt.onCloseHook, opt.tagMap)
 
-	oldValue, _ := getContainerNestedMapValue(Container.typeKeyValueMap, t, key)
-	if oldValue != nil && Container.beforeDuplicateRegister != nil {
+	oldValue, _ := getContainerNestedMapValue(globalContainer.typeKeyValueMap, t, key)
+	if oldValue != nil && globalContainer.beforeDuplicateRegister != nil {
 		oldValue.mu.RLock()
-		err := Container.beforeDuplicateRegister(NewBeforeDuplicateRegisterCtx(t, &key, oldValue, tmp, nil, nil, nil, false))
+		err := globalContainer.beforeDuplicateRegister(NewBeforeDuplicateRegisterCtx(t, &key, oldValue, tmp, nil, nil, nil, false))
 		oldValue.mu.RUnlock()
 		if err != nil {
 			return err
@@ -30,24 +30,24 @@ func Add[T any](key ValueKey, val T, opts ...ValueAddOption) error {
 	}
 
 	if opt.setDefault {
-		oldValue, _ := getContainerNestedMapValue(Container.typeKeyValueMap, t, DefaultValueKey)
-		if oldValue != nil && Container.beforeDuplicateRegister != nil {
+		oldValue, _ := getContainerNestedMapValue(globalContainer.typeKeyValueMap, t, DefaultValueKey)
+		if oldValue != nil && globalContainer.beforeDuplicateRegister != nil {
 			oldValue.mu.RLock()
-			err := Container.beforeDuplicateRegister(NewBeforeDuplicateRegisterCtx(t, &key, oldValue, tmp, nil, nil, nil, true))
+			err := globalContainer.beforeDuplicateRegister(NewBeforeDuplicateRegisterCtx(t, &key, oldValue, tmp, nil, nil, nil, true))
 			oldValue.mu.RUnlock()
 			if err != nil {
 				return err
 			}
 		}
 
-		setValueToContainerNestedMap(Container.typeKeyValueMap, t, DefaultValueKey, tmp)
+		setValueToContainerNestedMap(globalContainer.typeKeyValueMap, t, DefaultValueKey, tmp)
 	}
 
 	// to avoid replace DefaultValueKey value fail but key value get set
-	setValueToContainerNestedMap(Container.typeKeyValueMap, t, key, tmp)
+	setValueToContainerNestedMap(globalContainer.typeKeyValueMap, t, key, tmp)
 
-	if Container.afterAdd != nil {
-		Container.afterAdd(NewAfterAddCtx(t, &key, tmp, nil, nil))
+	if globalContainer.afterAdd != nil {
+		globalContainer.afterAdd(NewAfterAddCtx(t, &key, tmp, nil, nil))
 	}
 
 	return nil
@@ -70,7 +70,7 @@ func GetByKey[T any](key ValueKey) (T, error) {
 }
 
 func getByTypeKey(t reflect.Type, key ValueKey) (*containerValue, error) {
-	val, err := getContainerNestedMapValue(Container.typeKeyValueMap, t, key)
+	val, err := getContainerNestedMapValue(globalContainer.typeKeyValueMap, t, key)
 	if err != nil {
 		return nil, err
 	}
@@ -85,8 +85,8 @@ func getByTypeKey(t reflect.Type, key ValueKey) (*containerValue, error) {
 
 	val.setAccessed()
 
-	if Container.afterFirstAccess != nil {
-		Container.afterFirstAccess(NewAfterFirstAccessCtx(t, &key, val, nil, nil))
+	if globalContainer.afterFirstAccess != nil {
+		globalContainer.afterFirstAccess(NewAfterFirstAccessCtx(t, &key, val, nil, nil))
 	}
 
 	val.refCounterIncr()
@@ -131,7 +131,7 @@ func deleteByTypeKey(t reflect.Type, key ValueKey, opts ...ValueDeleteOption) er
 	}
 
 	// delete first so others won't see it
-	value, err := deleteContainerNestedMapValue(Container.typeKeyValueMap, t, key)
+	value, err := deleteContainerNestedMapValue(globalContainer.typeKeyValueMap, t, key)
 	if err != nil {
 		return err
 	}
@@ -145,7 +145,7 @@ func deleteByTypeKey(t reflect.Type, key ValueKey, opts ...ValueDeleteOption) er
 
 func ListKeys[T any]() []ValueKey {
 	t := reflect.TypeOf((*T)(nil)).Elem()
-	keyValueMap, exist := Container.typeKeyValueMap.Get(t)
+	keyValueMap, exist := globalContainer.typeKeyValueMap.Get(t)
 	if !exist {
 		return []ValueKey{}
 	}
@@ -163,7 +163,7 @@ func ListKeys[T any]() []ValueKey {
 
 func GetAll[T any]() []T {
 	t := reflect.TypeOf((*T)(nil)).Elem()
-	keyValueMap, exist := Container.typeKeyValueMap.Get(t)
+	keyValueMap, exist := globalContainer.typeKeyValueMap.Get(t)
 	if !exist {
 		return []T{}
 	}
@@ -181,7 +181,7 @@ func GetAll[T any]() []T {
 
 func DeductRefCount[T any]() error {
 	t := reflect.TypeOf((*T)(nil)).Elem()
-	val, err := getContainerNestedMapValue(Container.typeKeyValueMap, t, DefaultValueKey)
+	val, err := getContainerNestedMapValue(globalContainer.typeKeyValueMap, t, DefaultValueKey)
 	if err != nil {
 		return err
 	}
@@ -192,7 +192,7 @@ func DeductRefCount[T any]() error {
 
 func DeductRefCountByKey[T any](key ValueKey) error {
 	t := reflect.TypeOf((*T)(nil)).Elem()
-	val, err := getContainerNestedMapValue(Container.typeKeyValueMap, t, key)
+	val, err := getContainerNestedMapValue(globalContainer.typeKeyValueMap, t, key)
 	if err != nil {
 		return err
 	}
