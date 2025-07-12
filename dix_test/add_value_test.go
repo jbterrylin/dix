@@ -2,7 +2,10 @@ package dix_test
 
 import (
 	"errors"
+	"fmt"
+	"sync"
 	"testing"
+	"time"
 
 	"github.com/jbterrylin/dix"
 )
@@ -101,4 +104,46 @@ func TestNoAdd(t *testing.T) {
 	if !errors.Is(err, dix.ErrValueNotFound) {
 		t.Errorf("unexpected Get() err: got %v, want %v", err, dix.ErrValueNotFound)
 	}
+}
+
+func TestGetConcurrentGetValue(t *testing.T) {
+	test := NewTest("test")
+	err := dix.Add(TestKey, test, dix.WithValueSetDefault())
+	if err != nil {
+		t.Errorf("unexpected Add() err: got %v, want %v", err, nil)
+	}
+
+	runCount := 1000000
+	start := time.Now()
+	var wg sync.WaitGroup
+	for i := 0; i < runCount; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			testFromC, err := dix.Get[*Test]()
+			if err != nil {
+				t.Errorf("unexpected Get() err: got %v, want %v", err, nil)
+			}
+
+			testFromC.Name()
+			testFromC.Count()
+
+		}()
+	}
+	wg.Wait()
+	end := time.Now()
+	fmt.Println("dix used time", end.Sub(start))
+
+	start = time.Now()
+	for i := 0; i < runCount; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			test.Name()
+			test.Count()
+		}()
+	}
+	wg.Wait()
+	end = time.Now()
+	fmt.Println("no dix used time", end.Sub(start))
 }
