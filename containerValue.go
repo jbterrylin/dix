@@ -12,13 +12,13 @@ type containerValue struct {
 	mu          sync.RWMutex
 	value       any
 	onCloseHook func()
-	isAccessed  bool
+	isAccessed  atomic.Bool
 
 	refCounter     int64
 	refCounterCond *sync.Cond
 
-	createdAt  time.Time
-	accessedAt time.Time
+	createdAt  atomic.Int64
+	accessedAt atomic.Int64
 	tagMap     map[string]any
 }
 
@@ -27,20 +27,26 @@ func newContainerValue(
 	onCloseHook func(),
 	tagMap map[string]any,
 ) *containerValue {
-	return &containerValue{
+	tmp := &containerValue{
 		value:       value,
 		onCloseHook: onCloseHook,
 
 		refCounterCond: sync.NewCond(&sync.Mutex{}),
 
-		createdAt: time.Now(),
-		tagMap:    tagMap,
+		tagMap: tagMap,
 	}
+
+	tmp.createdAt.Store(time.Now().UnixMicro())
+
+	return tmp
 }
 
-func (c *containerValue) setAccessed() {
-	c.isAccessed = true
-	c.accessedAt = time.Now()
+func (c *containerValue) setAccessed() (isFirstAccess bool) {
+	isFirstAccess = c.isAccessed.CompareAndSwap(false, true)
+	if isFirstAccess {
+		c.accessedAt.Store(time.Now().UnixMicro())
+	}
+	return
 }
 
 func (c *containerValue) lock() {
@@ -93,10 +99,10 @@ func (c *containerValue) waitUntilRefZero() {
 
 // func (c *containerValue) GetValue() any             { return c.value }
 // func (c *containerValue) GetOnCloseHook() func()    { return c.onCloseHook }
-func (c *containerValue) GetIsAccessed() bool       { return c.isAccessed }
-func (c *containerValue) GetRefCounter() int64      { return c.refCounter }
-func (c *containerValue) GetCreatedAt() time.Time   { return c.createdAt }
-func (c *containerValue) GetAccessedAt() time.Time  { return c.accessedAt }
+func (c *containerValue) GetIsAccessed() bool       { return c.isAccessed.Load() }
+func (c *containerValue) GetRefCounter() int64      { return atomic.LoadInt64(&c.refCounter) }
+func (c *containerValue) GetCreatedAt() time.Time   { return time.UnixMicro(c.createdAt.Load()) }
+func (c *containerValue) GetAccessedAt() time.Time  { return time.UnixMicro(c.accessedAt.Load()) }
 func (c *containerValue) GetTagMap() map[string]any { return copyMap(c.tagMap) }
 
 func (c *containerValue) OnCloseHookExist() bool {
