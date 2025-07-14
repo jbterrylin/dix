@@ -14,7 +14,7 @@ type containerProvider struct {
 	valueWithCtx   func(context.Context) (any, error)
 	isValueWithCtx bool
 	noCache        bool
-	cacheValue     any
+	cacheValue     atomic.Value
 	isAccessed     bool
 
 	createdAt  time.Time
@@ -72,7 +72,7 @@ func (c *containerProvider) triggerOnCloseHook() {
 //	}
 func (c *containerProvider) GetIsValueWithCtx() bool   { return c.isValueWithCtx }
 func (c *containerProvider) GetNoCache() bool          { return c.noCache }
-func (c *containerProvider) GetCacheValue() any        { return c.cacheValue }
+func (c *containerProvider) GetCacheValue() any        { return c.cacheValue.Load() }
 func (c *containerProvider) GetIsAccessed() bool       { return c.isAccessed }
 func (c *containerProvider) GetCreatedAt() time.Time   { return c.createdAt }
 func (c *containerProvider) GetAccessedAt() time.Time  { return c.accessedAt }

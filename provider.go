@@ -131,8 +131,9 @@ func getProviderByTypeKey(ctx context.Context, t reflect.Type, key ProviderKey, 
 	provider.mu.Lock()
 	defer provider.mu.Unlock()
 
-	if !opt.reload && provider.cacheValue != nil {
-		return provider, provider.cacheValue, nil
+	cacheValue := provider.cacheValue.Load()
+	if !opt.reload && cacheValue != nil {
+		return provider, cacheValue, nil
 	}
 
 	done := make(chan struct{})
@@ -158,7 +159,7 @@ func getProviderByTypeKey(ctx context.Context, t reflect.Type, key ProviderKey, 
 	}
 
 	if !provider.noCache {
-		provider.cacheValue = tmp
+		provider.cacheValue.Store(tmp)
 	}
 
 	isFirstAccess := false
