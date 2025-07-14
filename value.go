@@ -75,17 +75,17 @@ func getByTypeKey(t reflect.Type, key ValueKey) (*containerValue, error) {
 		return nil, err
 	}
 
-	if val.isAccessed.Load() {
+	val.mu.Lock()
+	defer val.mu.Unlock()
+
+	if val.isAccessed {
 		val.refCounterIncr()
 		return val, nil
 	}
 
-	val.mu.RLock()
-	defer val.mu.RUnlock()
+	val.setAccessed()
 
-	isFirstAccess := val.setAccessed()
-
-	if isFirstAccess && globalContainer.afterFirstAccess != nil {
+	if globalContainer.afterFirstAccess != nil {
 		globalContainer.afterFirstAccess(NewAfterFirstAccessCtx(t, &key, val, nil, nil))
 	}
 

@@ -1,7 +1,7 @@
 package dix
 
 type iContainerData interface {
-	setAccessed() (isFirstAccess bool)
+	setAccessed()
 	lock()
 	unlock()
 	triggerOnCloseHook()
