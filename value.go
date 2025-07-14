@@ -21,9 +21,7 @@ func Add[T any](key ValueKey, val T, opts ...ValueAddOption) error {
 
 	oldValue, _ := getContainerNestedMapValue(globalContainer.typeKeyValueMap, t, key)
 	if oldValue != nil && globalContainer.beforeDuplicateRegister != nil {
-		oldValue.mu.RLock()
 		err := globalContainer.beforeDuplicateRegister(NewBeforeDuplicateRegisterCtx(t, &key, oldValue, tmp, nil, nil, nil, false))
-		oldValue.mu.RUnlock()
 		if err != nil {
 			return err
 		}
@@ -32,9 +30,7 @@ func Add[T any](key ValueKey, val T, opts ...ValueAddOption) error {
 	if opt.setDefault {
 		oldValue, _ := getContainerNestedMapValue(globalContainer.typeKeyValueMap, t, DefaultValueKey)
 		if oldValue != nil && globalContainer.beforeDuplicateRegister != nil {
-			oldValue.mu.RLock()
 			err := globalContainer.beforeDuplicateRegister(NewBeforeDuplicateRegisterCtx(t, &key, oldValue, tmp, nil, nil, nil, true))
-			oldValue.mu.RUnlock()
 			if err != nil {
 				return err
 			}
@@ -74,9 +70,6 @@ func getByTypeKey(t reflect.Type, key ValueKey) (*containerValue, error) {
 	if err != nil {
 		return nil, err
 	}
-
-	val.mu.Lock()
-	defer val.mu.Unlock()
 
 	if val.isAccessed.Load() {
 		val.refCounterIncr()
@@ -135,8 +128,6 @@ func deleteByTypeKey(t reflect.Type, key ValueKey, opts ...ValueDeleteOption) er
 	if err != nil {
 		return err
 	}
-	value.mu.Lock()
-	defer value.mu.Unlock()
 	if !opt.skipOnClose {
 		value.triggerOnCloseHook()
 	}

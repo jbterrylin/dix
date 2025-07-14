@@ -9,7 +9,6 @@ import (
 var _ iContainerData = &containerValue{}
 
 type containerValue struct {
-	mu          sync.RWMutex
 	value       any
 	onCloseHook func()
 	isAccessed  atomic.Bool
@@ -44,14 +43,6 @@ func (c *containerValue) setAccessed() (isFirstAccess bool) {
 		c.accessedAt.Store(time.Now().UnixMicro())
 	}
 	return
-}
-
-func (c *containerValue) lock() {
-	c.mu.Lock()
-}
-
-func (c *containerValue) unlock() {
-	c.mu.Unlock()
 }
 
 func (c *containerValue) triggerOnCloseHook() {

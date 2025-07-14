@@ -104,9 +104,6 @@ func reset[Key ~string, Value iContainerData](
 				// delete first so others won't see it
 				_, _ = deleteContainerNestedMapValue(typeKeyValueMap, typ, key)
 
-				val.lock()
-				defer val.unlock()
-
 				if !skipOnClose && key != defaultKey {
 					val.triggerOnCloseHook()
 				}

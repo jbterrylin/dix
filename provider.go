@@ -54,9 +54,7 @@ func addProvider[T any](key ProviderKey, value func() (T, error), valueWithCtx f
 
 	oldValue, _ := getContainerNestedMapValue(globalContainer.typeKeyProviderMap, t, key)
 	if oldValue != nil && globalContainer.beforeDuplicateRegister != nil {
-		oldValue.mu.RLock()
 		err := globalContainer.beforeDuplicateRegister(NewBeforeDuplicateRegisterCtx(t, nil, nil, nil, &key, oldValue, tmp, false))
-		oldValue.mu.RUnlock()
 		if err != nil {
 			return err
 		}
@@ -65,9 +63,7 @@ func addProvider[T any](key ProviderKey, value func() (T, error), valueWithCtx f
 	if opt.setDefault {
 		oldValue, _ := getContainerNestedMapValue(globalContainer.typeKeyProviderMap, t, DefaultProviderKey)
 		if oldValue != nil && globalContainer.beforeDuplicateRegister != nil {
-			oldValue.mu.RLock()
 			err := globalContainer.beforeDuplicateRegister(NewBeforeDuplicateRegisterCtx(t, nil, nil, nil, &key, oldValue, tmp, true))
-			oldValue.mu.RUnlock()
 			if err != nil {
 				return err
 			}
@@ -127,9 +123,6 @@ func getProviderByTypeKey(ctx context.Context, t reflect.Type, key ProviderKey, 
 	if err != nil {
 		return nil, nil, err
 	}
-
-	provider.mu.Lock()
-	defer provider.mu.Unlock()
 
 	cacheValue := provider.cacheValue.Load()
 	if !opt.reload && cacheValue != nil {

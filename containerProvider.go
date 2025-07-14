@@ -2,7 +2,6 @@ package dix
 
 import (
 	"context"
-	"sync"
 	"sync/atomic"
 	"time"
 )
@@ -10,7 +9,6 @@ import (
 var _ iContainerData = &containerProvider{}
 
 type containerProvider struct {
-	mu             sync.RWMutex
 	value          func() (any, error)
 	valueWithCtx   func(context.Context) (any, error)
 	isValueWithCtx bool
@@ -56,14 +54,6 @@ func (c *containerProvider) setAccessed() (isFirstAccess bool) {
 		c.accessedAt.Store(time.Now().UnixMicro())
 	}
 	return
-}
-
-func (c *containerProvider) lock() {
-	c.mu.Lock()
-}
-
-func (c *containerProvider) unlock() {
-	c.mu.Unlock()
 }
 
 func (c *containerProvider) triggerOnCloseHook() {
