@@ -94,7 +94,7 @@ func (c *containerValue) waitUntilRefZero() {
 // func (c *containerValue) GetValue() any             { return c.value }
 // func (c *containerValue) GetOnCloseHook() func()    { return c.onCloseHook }
 func (c *containerValue) GetIsAccessed() bool       { return c.isAccessed }
-func (c *containerValue) GetRefCounter() int64      { return c.refCounter }
+func (c *containerValue) GetRefCounter() int64      { return atomic.LoadInt64(&c.refCounter) }
 func (c *containerValue) GetCreatedAt() time.Time   { return c.createdAt }
 func (c *containerValue) GetAccessedAt() time.Time  { return c.accessedAt }
 func (c *containerValue) GetTagMap() map[string]any { return copyMap(c.tagMap) }
