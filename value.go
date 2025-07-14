@@ -78,7 +78,7 @@ func getByTypeKey(t reflect.Type, key ValueKey) (*containerValue, error) {
 	val.mu.Lock()
 	defer val.mu.Unlock()
 
-	if val.isAccessed {
+	if val.isAccessed.Load() {
 		val.refCounterIncr()
 		return val, nil
 	}

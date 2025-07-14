@@ -3,6 +3,7 @@ package dix
 import (
 	"context"
 	"sync"
+	"sync/atomic"
 	"time"
 )
 
@@ -15,10 +16,10 @@ type containerProvider struct {
 	isValueWithCtx bool
 	noCache        bool
 	cacheValue     atomic.Value
-	isAccessed     bool
+	isAccessed     atomic.Bool
 
 	createdAt  time.Time
-	accessedAt time.Time
+	accessedAt atomic.Int64
 	tagMap     map[string]any
 }
 
@@ -49,9 +50,12 @@ func newCtxContainerProvider(
 	}
 }
 
-func (c *containerProvider) setAccessed() {
-	c.isAccessed = true
-	c.accessedAt = time.Now()
+func (c *containerProvider) setAccessed() (isFirstAccess bool) {
+	isFirstAccess = c.isAccessed.CompareAndSwap(false, true)
+	if isFirstAccess {
+		c.accessedAt.Store(time.Now().UnixMicro())
+	}
+	return
 }
 
 func (c *containerProvider) lock() {
@@ -73,7 +77,7 @@ func (c *containerProvider) triggerOnCloseHook() {
 func (c *containerProvider) GetIsValueWithCtx() bool   { return c.isValueWithCtx }
 func (c *containerProvider) GetNoCache() bool          { return c.noCache }
 func (c *containerProvider) GetCacheValue() any        { return c.cacheValue.Load() }
-func (c *containerProvider) GetIsAccessed() bool       { return c.isAccessed }
+func (c *containerProvider) GetIsAccessed() bool       { return c.isAccessed.Load() }
 func (c *containerProvider) GetCreatedAt() time.Time   { return c.createdAt }
-func (c *containerProvider) GetAccessedAt() time.Time  { return c.accessedAt }
+func (c *containerProvider) GetAccessedAt() time.Time  { return time.UnixMicro(c.accessedAt.Load()) }
 func (c *containerProvider) GetTagMap() map[string]any { return copyMap(c.tagMap) }

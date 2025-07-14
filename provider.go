@@ -162,11 +162,7 @@ func getProviderByTypeKey(ctx context.Context, t reflect.Type, key ProviderKey, 
 		provider.cacheValue.Store(tmp)
 	}
 
-	isFirstAccess := false
-	if !provider.isAccessed {
-		isFirstAccess = true
-		provider.setAccessed()
-	}
+	isFirstAccess := provider.setAccessed()
 
 	if globalContainer.afterProviderRun != nil {
 		globalContainer.afterProviderRun(NewAfterProviderRunCtx(t, key, provider, tmp))
